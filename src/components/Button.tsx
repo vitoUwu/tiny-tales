@@ -20,8 +20,13 @@ export function Button({
       data-type={type}
       data-active={active ?? false}
       className={clsx(
-        "flex items-center gap-3 rounded-md px-3 py-1 transition-colors disabled:cursor-not-allowed data-[type='primary']:border data-[type='primary']:border-zinc-700 data-[type='primary']:bg-zinc-800 data-[type='primary']:hover:bg-zinc-700 data-[type='primary']:disabled:border-zinc-700/50 data-[type='primary']:disabled:bg-zinc-800/50",
-        { "bg-zinc-700": active }
+        "flex items-center gap-3 rounded-md px-3 py-1 transition-colors disabled:cursor-not-allowed ",
+        {
+          "border border-zinc-600 bg-zinc-700 disabled:border-zinc-700/50 disabled:bg-zinc-800/50":
+            type === "primary" && active,
+          "border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 disabled:border-zinc-700/50 disabled:bg-zinc-800/50":
+            type === "primary" && !active,
+        }
       )}
       {...props}
     >
