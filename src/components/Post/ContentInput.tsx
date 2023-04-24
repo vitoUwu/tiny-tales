@@ -1,14 +1,17 @@
 import { forwardRef, useState, type TextareaHTMLAttributes } from "react";
 
-export const CreatePostInput = forwardRef<
+export const PostContentInput = forwardRef<
   HTMLTextAreaElement,
-  Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, "className" | "type">
+  Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, "className">
 >(function TextInput(props, ref) {
-  const [inputLength, setInputLength] = useState(0);
+  const [inputLength, setInputLength] = useState(
+    typeof props.value === "string" ? props.value.length : 0
+  );
 
   return (
     <div className="relative">
       <textarea
+        {...props}
         rows={4}
         maxLength={256}
         ref={ref}

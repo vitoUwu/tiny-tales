@@ -5,9 +5,9 @@ import type { Post as PostType } from "@/@type/post";
 import { Avatar } from "@/components/Avatar";
 import { Button } from "@/components/Button";
 import { Feed } from "@/components/Feed";
-import { CreatePostInput } from "@/components/Inputs/CreatePostInput";
 import { Loading } from "@/components/Loading";
 import { Post } from "@/components/Post";
+import { PostContentInput } from "@/components/Post/ContentInput";
 import { api } from "@/utils/api";
 import * as Dialog from "@radix-ui/react-dialog";
 import { FileX, PlusCircle, X } from "phosphor-react";
@@ -118,6 +118,13 @@ export default function Home() {
                     oldState.filter((p) => p.id !== post.id)
                   );
                 }}
+                onEdit={(content) => {
+                  setPosts((oldState) =>
+                    oldState.map((oldPost) =>
+                      oldPost.id === post.id ? { ...post, content } : oldPost
+                    )
+                  );
+                }}
               />
             ))
           ) : (
@@ -169,7 +176,7 @@ export default function Home() {
                       <X size={24} />
                     </Dialog.Close>
                   </div>
-                  <CreatePostInput ref={textInputRef} />
+                  <PostContentInput ref={textInputRef} />
                   <div className="flex justify-end">
                     <Dialog.Close asChild>
                       <Button

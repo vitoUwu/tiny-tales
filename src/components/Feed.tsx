@@ -6,7 +6,7 @@ type FeedProps = {
 
 export function Feed({ children }: FeedProps) {
   return (
-    <section className="no-scrollbar flex h-full flex-col gap-3 overflow-y-scroll shadow-inner">
+    <section className="no-scrollbar flex h-full flex-col items-center gap-3 overflow-y-scroll shadow-inner">
       {children}
     </section>
   );

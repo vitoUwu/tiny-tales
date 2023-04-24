@@ -107,6 +107,45 @@ export const postRoutes = createTRPCRouter({
         },
       });
     }),
+  edit: protectedRatelimitedProcedure
+    .input(
+      z.object({
+        id: z.string().cuid(),
+        content: z.string().max(256),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const post = await ctx.prisma.post.findUnique({
+        where: {
+          id: input.id,
+        },
+      });
+
+      if (!post) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Post was not found",
+        });
+      }
+
+      const isUserAllowed = ctx.session.user.id === post.authorId;
+
+      if (!isUserAllowed) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "You have no permission to edit this post",
+        });
+      }
+
+      await ctx.prisma.post.update({
+        where: {
+          id: input.id,
+        },
+        data: {
+          content: input.content,
+        },
+      });
+    }),
   setLikeState: protectedRatelimitedProcedure
     .input(z.object({ postId: z.string().cuid(), liked: z.boolean() }))
     .mutation(async ({ ctx, input }) => {
@@ -165,5 +204,22 @@ export const postRoutes = createTRPCRouter({
         });
         return;
       }
+    }),
+  fetchById: publicProcedure
+    .input(z.string().cuid())
+    .query(async ({ ctx, input }) => {
+      return await ctx.prisma.post.findUnique({
+        where: { id: input },
+        include: {
+          likes: true,
+          author: {
+            select: {
+              name: true,
+              image: true,
+              badges: true,
+            },
+          },
+        },
+      });
     }),
 });

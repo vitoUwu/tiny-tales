@@ -1,11 +1,14 @@
 import type { Post } from "@/@type/post";
 import { api } from "@/utils/api";
+import { RelativeTime } from "@primer/react";
 import * as Popover from "@radix-ui/react-popover";
 import { type Session } from "next-auth";
-import { DotsThreeVertical } from "phosphor-react";
+import { DotsThreeVertical, Link } from "phosphor-react";
 import { useEffect, useRef, useState } from "react";
 import { Avatar } from "./Avatar";
 import { Button } from "./Button";
+import { DeleteButton } from "./Post/DeleteButton";
+import { EditButton } from "./Post/EditButton";
 import { Tag } from "./Tag";
 
 type PostProps = {
@@ -13,10 +16,18 @@ type PostProps = {
   isLast: boolean;
   user: Session["user"] | undefined;
   onDelete?: () => void;
+  onEdit?: (content: string) => void;
   fetchMore?: () => void;
 };
 
-export function Post({ data, isLast, user, onDelete, fetchMore }: PostProps) {
+export function Post({
+  data,
+  isLast,
+  user,
+  onDelete,
+  onEdit,
+  fetchMore,
+}: PostProps) {
   const postRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!postRef?.current) return;
@@ -32,6 +43,8 @@ export function Post({ data, isLast, user, onDelete, fetchMore }: PostProps) {
   }, [isLast]);
 
   const { mutate: deletePost } = api.post.delete.useMutation();
+  const { mutate: editPost, isLoading: isEditingPost } =
+    api.post.edit.useMutation();
   const { mutate: toggleLike } = api.post.setLikeState.useMutation();
   const [_userLiked, setUserLiked] = useState(
     user ? data.likes.some((like) => like.authorId === user.id) : false
@@ -41,6 +54,11 @@ export function Post({ data, isLast, user, onDelete, fetchMore }: PostProps) {
   function handleDeleteButtonClick() {
     deletePost({ id: data.id });
     onDelete?.();
+  }
+
+  function handleEditButtonClick(content: string) {
+    editPost({ id: data.id, content });
+    onEdit?.(content);
   }
 
   function handleLikeButtonClick() {
@@ -54,18 +72,24 @@ export function Post({ data, isLast, user, onDelete, fetchMore }: PostProps) {
     setUserLiked((oldState) => !oldState);
   }
 
+  const hasDeletePerm =
+    user?.id === data.authorId || user?.roles.includes("admin");
+  const hasEditPerm = user?.id === data.authorId;
+
   return (
     <div
       ref={postRef}
-      className="flex h-fit gap-3 rounded-md border border-zinc-800 p-5"
+      className="flex h-fit w-full gap-3 rounded-md border border-zinc-800 p-5 md:w-[600px]"
     >
       <Avatar size={36} source={data.author.image ?? ""} />
       <div className="w-full overflow-hidden break-words">
         <div className="flex w-full items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <p className="w-full font-semibold">
-              {data.author.name ?? "Unknown"}
-            </p>
+          <div className="flex w-max items-center gap-3">
+            <p className="font-semibold">{data.author.name ?? "Unknown"}</p>
+            <RelativeTime
+              className="text-sm text-zinc-500"
+              date={data.created_at}
+            />
             {data.author.badges.some((badge) => badge.id === "dev") ? (
               <Tag>DEV</Tag>
             ) : null}
@@ -77,15 +101,36 @@ export function Post({ data, isLast, user, onDelete, fetchMore }: PostProps) {
               </Popover.Trigger>
               <Popover.Portal>
                 <Popover.Content
+                  side="right"
+                  align="start"
                   sideOffset={10}
-                  className="rounded-md border-zinc-700 bg-zinc-800 text-zinc-300"
+                  className="flex flex-col items-end gap-1 text-zinc-300"
                 >
-                  {user?.id === data.authorId ||
-                  user?.roles.includes("admin") ? (
-                    <Button onClick={handleDeleteButtonClick}>Deletar</Button>
-                  ) : (
-                    <p className="m-3">No Actions</p>
-                  )}
+                  <Popover.Close className="w-full">
+                    <Button
+                      fill
+                      onClick={() => {
+                        navigator.clipboard
+                          .writeText(
+                            `${document.location.origin}/post/${data.id}`
+                          )
+                          .catch(console.error);
+                      }}
+                    >
+                      <Link size={24} />
+                      <p>Copy Link</p>
+                    </Button>
+                  </Popover.Close>
+                  {hasEditPerm ? (
+                    <EditButton
+                      content={data.content}
+                      isEditingPost={isEditingPost}
+                      onEdit={handleEditButtonClick}
+                    />
+                  ) : null}
+                  {hasDeletePerm ? (
+                    <DeleteButton onConfirm={handleDeleteButtonClick} />
+                  ) : null}
                 </Popover.Content>
               </Popover.Portal>
             </Popover.Root>
