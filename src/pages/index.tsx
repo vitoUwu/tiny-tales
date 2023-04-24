@@ -121,7 +121,9 @@ export default function Home() {
                 onEdit={(content) => {
                   setPosts((oldState) =>
                     oldState.map((oldPost) =>
-                      oldPost.id === post.id ? { ...post, content } : oldPost
+                      oldPost.id === post.id
+                        ? { ...post, edited: true, content }
+                        : oldPost
                     )
                   );
                 }}

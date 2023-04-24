@@ -195,6 +195,9 @@ export default function Page() {
               <div className="flex flex-col gap-3">
                 <p className="overflow-hidden text-ellipsis text-zinc-300">
                   {postQuery.data.content}
+                  {postQuery.data.edited ? (
+                    <span className="ml-3 text-sm text-zinc-500">(Edited)</span>
+                  ) : null}
                 </p>
                 <div className="flex flex-wrap gap-3">
                   <Button

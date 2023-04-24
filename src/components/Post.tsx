@@ -139,6 +139,9 @@ export function Post({
         <div className="flex flex-col gap-3">
           <p className="overflow-hidden text-ellipsis text-zinc-300">
             {data.content}
+            {data.edited ? (
+              <span className="ml-3 text-sm text-zinc-500">(Edited)</span>
+            ) : null}
           </p>
           <div className="flex flex-wrap gap-3">
             <Button

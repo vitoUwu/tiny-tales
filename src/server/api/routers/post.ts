@@ -143,6 +143,7 @@ export const postRoutes = createTRPCRouter({
         },
         data: {
           content: input.content,
+          edited: true,
         },
       });
     }),
