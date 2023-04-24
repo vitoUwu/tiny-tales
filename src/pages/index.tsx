@@ -5,17 +5,18 @@ import type { Post as PostType } from "@/@type/post";
 import { Avatar } from "@/components/Avatar";
 import { Button } from "@/components/Button";
 import { Feed } from "@/components/Feed";
-import { TextInput } from "@/components/Inputs/Text";
+import { CreatePostInput } from "@/components/Inputs/CreatePostInput";
 import { Loading } from "@/components/Loading";
 import { Post } from "@/components/Post";
 import { api } from "@/utils/api";
-import { FileX, PaperPlaneRight } from "phosphor-react";
+import * as Dialog from "@radix-ui/react-dialog";
+import { FileX, PlusCircle, X } from "phosphor-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export default function Home() {
   const [posts, setPosts] = useState<PostType[]>([]);
+  const textInputRef = useRef<HTMLTextAreaElement>(null);
 
-  const textInputRef = useRef<HTMLInputElement>(null);
   const session = useSession();
   const utils = api.useContext();
 
@@ -26,7 +27,7 @@ export default function Home() {
     }
   );
 
-  const { mutateAsync: createPost, isLoading: isCreatingPost } =
+  const { mutateAsync: mutateCreatePost, isLoading: isCreatingPost } =
     api.post.create.useMutation({
       onError: () => {
         alert("An Error has occured while creating your post");
@@ -50,18 +51,21 @@ export default function Home() {
     });
   }, []);
 
-  async function handleCreatePostButtonClick() {
-    if (!textInputRef.current || !textInputRef.current.value) return;
-    const post = await createPost({ content: textInputRef.current.value });
-    addPosts([post]);
-    textInputRef.current.value = "";
-  }
-
   useEffect(() => {
     const posts =
       postInfiniteQuery.data?.pages.flatMap((page) => page.posts) ?? [];
     addPosts(posts);
   }, [postInfiniteQuery.data?.pages, addPosts]);
+
+  async function createPost() {
+    const post = await mutateCreatePost({
+      content: textInputRef.current!.value,
+    }).catch(console.error);
+    if (!post) {
+      return;
+    }
+    addPosts([post]);
+  }
 
   return (
     <>
@@ -100,6 +104,7 @@ export default function Home() {
           ) : posts.length ? (
             posts.map((post, index) => (
               <Post
+                user={session.data?.user}
                 key={post.id}
                 data={post}
                 isLast={index === posts.length - 1}
@@ -139,27 +144,47 @@ export default function Home() {
           ) : null}
         </Feed>
         {session.data ? (
-          <div className="flex w-full gap-3">
-            <TextInput
-              autoComplete="false"
-              disabled={isCreatingPost}
-              ref={textInputRef}
-              placeholder="Criar post..."
-              name="createPost"
-            />
-            <Button
-              name="Criar Post"
-              disabled={isCreatingPost}
-              onClick={() => {
-                handleCreatePostButtonClick().catch(console.error);
-              }}
-            >
-              {isCreatingPost ? (
-                <Loading size={24} />
-              ) : (
-                <PaperPlaneRight size={24} />
-              )}
-            </Button>
+          <div className="flex w-full justify-end gap-3">
+            <Dialog.Root modal>
+              <Dialog.Trigger asChild>
+                <Button type="primary" disabled={isCreatingPost}>
+                  {isCreatingPost ? (
+                    <Loading size={24} />
+                  ) : (
+                    <>
+                      <PlusCircle size={24} />
+                      <p>New Post</p>
+                    </>
+                  )}
+                </Button>
+              </Dialog.Trigger>
+              <Dialog.Portal className="transition-all">
+                <Dialog.Overlay className="fixed inset-0 bg-black/50 transition-all" />
+                <Dialog.Content className="fixed left-1/2 top-1/2 w-[90%] -translate-x-1/2 -translate-y-1/2 space-y-3 rounded-md border border-zinc-700 bg-zinc-900 p-3 text-zinc-200 md:w-[50%]">
+                  <div className="flex justify-between">
+                    <Dialog.Title className="text-2xl font-semibold">
+                      New Post
+                    </Dialog.Title>
+                    <Dialog.Close>
+                      <X size={24} />
+                    </Dialog.Close>
+                  </div>
+                  <CreatePostInput ref={textInputRef} />
+                  <div className="flex justify-end">
+                    <Dialog.Close asChild>
+                      <Button
+                        type="primary"
+                        onClick={() => {
+                          createPost().catch(console.error);
+                        }}
+                      >
+                        Create
+                      </Button>
+                    </Dialog.Close>
+                  </div>
+                </Dialog.Content>
+              </Dialog.Portal>
+            </Dialog.Root>
           </div>
         ) : null}
       </main>

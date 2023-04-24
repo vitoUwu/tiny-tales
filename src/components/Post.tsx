@@ -1,7 +1,7 @@
 import type { Post } from "@/@type/post";
 import { api } from "@/utils/api";
 import * as Popover from "@radix-ui/react-popover";
-import { useSession } from "next-auth/react";
+import { type Session } from "next-auth";
 import { DotsThreeVertical } from "phosphor-react";
 import { useEffect, useRef, useState } from "react";
 import { Avatar } from "./Avatar";
@@ -11,11 +11,12 @@ import { Tag } from "./Tag";
 type PostProps = {
   data: Post;
   isLast: boolean;
+  user: Session["user"] | undefined;
   onDelete?: () => void;
   fetchMore?: () => void;
 };
 
-export function Post({ data, isLast, onDelete, fetchMore }: PostProps) {
+export function Post({ data, isLast, user, onDelete, fetchMore }: PostProps) {
   const postRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!postRef?.current) return;
@@ -30,13 +31,10 @@ export function Post({ data, isLast, onDelete, fetchMore }: PostProps) {
     observer.observe(postRef.current);
   }, [isLast]);
 
-  const { data: session } = useSession();
   const { mutate: deletePost } = api.post.delete.useMutation();
   const { mutate: toggleLike } = api.post.setLikeState.useMutation();
-  const [userLiked, setUserLiked] = useState(
-    session
-      ? data.likes.some((like) => like.authorId === session.user.id)
-      : false
+  const [_userLiked, setUserLiked] = useState(
+    user ? data.likes.some((like) => like.authorId === user.id) : false
   );
   const [likeCount, setLikeCount] = useState(data.likes.length);
 
@@ -46,11 +44,13 @@ export function Post({ data, isLast, onDelete, fetchMore }: PostProps) {
   }
 
   function handleLikeButtonClick() {
-    if (!session) {
+    if (!user) {
       return;
     }
-    toggleLike({ postId: data.id, liked: !userLiked });
-    setLikeCount((oldState) => (userLiked ? (oldState -= 1) : (oldState += 1)));
+    toggleLike({ postId: data.id, liked: !_userLiked });
+    setLikeCount((oldState) =>
+      _userLiked ? (oldState -= 1) : (oldState += 1)
+    );
     setUserLiked((oldState) => !oldState);
   }
 
@@ -80,8 +80,8 @@ export function Post({ data, isLast, onDelete, fetchMore }: PostProps) {
                   sideOffset={10}
                   className="rounded-md border-zinc-700 bg-zinc-800 text-zinc-300"
                 >
-                  {session?.user.id === data.authorId ||
-                  session?.user.roles.includes("admin") ? (
+                  {user?.id === data.authorId ||
+                  user?.roles.includes("admin") ? (
                     <Button onClick={handleDeleteButtonClick}>Deletar</Button>
                   ) : (
                     <p className="m-3">No Actions</p>
@@ -97,8 +97,8 @@ export function Post({ data, isLast, onDelete, fetchMore }: PostProps) {
           </p>
           <div className="flex flex-wrap gap-3">
             <Button
-              active={userLiked}
-              disabled={!session}
+              active={_userLiked}
+              disabled={!user}
               onClick={handleLikeButtonClick}
             >
               👍 {likeCount}

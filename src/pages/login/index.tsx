@@ -20,7 +20,7 @@ const Login: NextPage<LoginProps> = ({ providers }) => {
   }
 
   return (
-    <main className="flex h-screen w-screen items-center justify-center bg-zinc-900 p-10 text-zinc-200">
+    <main className="flex h-screen w-screen flex-col items-center justify-center gap-3 bg-zinc-900 p-10 text-zinc-200">
       {Object.values(providers).map((provider) => (
         <Button
           key={provider.id}

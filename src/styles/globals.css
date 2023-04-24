@@ -3,6 +3,11 @@
 @tailwind utilities;
 
 @layer components {
+  ::selection {
+    color: rgb(24 24 27 / var(--tw-bg-opacity));
+    background: rgb(228 228 231 / var(--tw-text-opacity));
+  }
+
   /* Hide scrollbar for Chrome, Safari and Opera */
   .no-scrollbar::-webkit-scrollbar {
     display: none;
